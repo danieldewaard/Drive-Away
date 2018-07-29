@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <link href="jquery.mobile-1.4.5.min.css" rel="stylesheet">
+    <link href="sweetalert.css" rel="stylesheet" type="text/css">
+    <script src="jquery-1.11.2.min.js"></script>
+    <script src="jquery.mobile-1.4.5.min.js"></script>
+    <script src="hammer.min.js"></script>
+    <script src="ion.sound.min.js"></script>
+    <script src="sweetalert.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/5.3.0/firebase.js"></script>
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyCHN20gQV-ITUWwHuMx0_ubO0UmRhrut5s",
+            authDomain: "drive-away-1532751720982.firebaseapp.com",
+            databaseURL: "https://drive-away-1532751720982.firebaseio.com",
+            projectId: "drive-away-1532751720982",
+            storageBucket: "drive-away-1532751720982.appspot.com",
+            messagingSenderId: "429285031143"
+        };
+        firebase.initializeApp(config);
+    </script>      
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+    
+    <title>DriveAway</title>
+</head>
+
+<body>
+
+    <div data-role="page" id="Dashboard" data-theme="b" style="background-color:#1D1D1D">
+
+        <img id="banner" style="width:80%; display:block; margin-left:auto;margin-right:auto;margin-bottom:0%;margin-top:20px" src="images/banner.png" />
+
+        <div style="margin-right:auto;margin-left:auto;margin-top:15px;text-align:center">
+            <a style="width:20%;display:inline" href="#Setup" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-gear ui-btn-icon-left"> Setup</a>
+
+            <a style="width:20%;display:inline" href="#New" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-plus ui-btn-icon-left"> New</a>
+        </div>
+
+        <div data-role="popup" id="New" data-theme="b">
+            <h3 style="text-align:center">New Trip</h3>
+            <div style="background-color:#1D1D1D;border-style:none" class="ui-content" data-role="main">
+
+                <p style="font-size: 85%">Registration: </p>
+                <input type="text" id="plate" value="ABC123">
+
+                <p style="font-size: 85%">Odometer: </p>
+                <input type="text" id="odo" value="0">
+
+                <p style="font-size: 85%">Supervisor: </p>
+                <input type="text" id="supervisor" value="John Smith">
+
+                <h3 style="width:25%;margin-right:auto;margin-left:auto" onclick="StartTrip()" class="ui-btn ui-icon-carat-r ui-btn-icon-right">Start</h3>
+
+            </div>
+        </div>
+
+        <div data-role="popup" id="Setup" data-theme="b">
+            <h3 style="text-align:center">Setup</h3>
+            <div style="background-color:#1D1D1D;border-style:none" class="ui-content" data-role="main">
+
+                <p style="font-size: 85%">Default Number Plate: </p>
+                <input type="text" id="plateDefault" value="ABC123">
+
+                <p style="font-size: 85%">Default Supervisor: </p>
+                <input type="text" id="supervisorDefault" value="John Smith">
+
+                <h onclick="SetupDone()" style="width:25%;margin-right:auto;margin-left:auto" class="ui-btn ui-icon-forward ui-btn-icon-left">Done</h>
+
+            </div>
+        </div>
+
+        <div style="background-color:#1D1D1D;border-style:none" class="ui-content" data-role="main">
+
+            <p>Total Hours: </p>
+            <div id="dayProgress" style="height:50%; width:100%; background-color:grey">
+                <div id="dayBar" style="width:50%; height:30px; background-color:#2e75b6"></div>
+            </div>
+            <p id="dayText" style="font-size: 75%; text-align:right"> </p>
+
+            <p>Night Hours: </p>
+            <div id="nightProgress" style="height:50%; width:100%; background-color:grey">
+                <div id="nightBar" style="width:50%; height:30px; background-color:#548235"></div>
+            </div>
+            <p id="nightText" style="font-size: 75%; text-align:right"> </p>
+
+            <p style="font-size: 100%">Recent Trips: </p>
+            <div id="recents"></div>
+        </div>
+    </div>
+
+    <div data-role="page" id="Running" data-theme="b" style="background-color:#1D1D1D">
+        <img id="img" style="height:250%; display:block; margin-left:auto;margin-right:auto;margin-bottom:0%;margin-top:100px" src="images/bg.png" />
+
+        <h3 style="margin:25%;display:inline; justify-content:center">Trip in progress...</h3>
+        <h2 id="demo" style="text-align:center"> 0h 0m 0s</h2>
+        <a style="margin-right:auto;margin-left:auto; width:20%" onclick="StopTrip()" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-location ui-btn-icon-left"> Stop</a>
+    </div>
+
+    <div data-role="page" id="Summary" data-theme="b" style="background-color:#1D1D1D">
+        <img id="banner" style="width:80%; display:block; margin-left:auto;margin-right:auto;margin-bottom:0%;margin-top:20px" src="images/banner.png" />
+
+        <div style="background-color:#1D1D1D;border-style:none" class="ui-content" data-role="main">
+            <h3 style="display:inline; justify-content:center">Summary</h3>
+            <p style="font-size: 85%">Travel Time (min): </p>
+            <input type="text" id="traveltime2">
+            <p style="font-size: 85%">Odometer (km): </p>
+            <table>
+                <tbody>
+                    <tr>
+                        <td>
+                            <input type="text" id="odoStart2">
+                        </td>
+                        <td>
+                            <input type="text" id="odoEnd2">
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 85%">Supervisor: </p>
+            <input type="text" id="supervisor2">
+            <p style="font-size: 85%">Numberplate: </p>
+            <input type="text" id="numberplate2">
+            <p style="font-size: 85%">Parking: </p>
+            <form method="post" action="demoform.asp">
+                <fieldset data-role="controlgroup">
+                    <label for="park">Parking</label>
+                    <input type="checkbox" id="park">
+                </fieldset>
+            </form>
+            <p style="font-size: 85%">Traffic: </p>
+            <form method="post" action="demoform.asp">
+                <fieldset data-role="controlgroup">
+                    <label for="light">Light</label>
+                    <input type="checkbox" id="light">
+                    <label for="moderate">Moderate</label>
+                    <input type="checkbox" id="moderate">
+                    <label for="heavy">Heavy</label>
+                    <input type="checkbox" id="heavy">
+                </fieldset>
+            </form>
+
+            <p style="font-size: 85%">Weather: </p>
+            <form method="post" action="demoform.asp">
+                <fieldset data-role="controlgroup">
+                    <label for="dry">Dry</label>
+                    <input type="checkbox" id="dry">
+                    <label for="wet">Wet</label>
+                    <input type="checkbox" id="wet">
+                </fieldset>
+            </form>
+
+            <p style="font-size: 85%">Road Type: </p>
+            <form method="post" action="demoform.asp">
+                <fieldset data-role="controlgroup">
+                    <label for="local">Local St</label>
+                    <input type="checkbox" id="local">
+                    <label for="main">Main Rd</label>
+                    <input type="checkbox" id="main">
+                    <label for="inner">Inner City</label>
+                    <input type="checkbox" id="inner">
+                    <label for="freeway">Freeway</label>
+                    <input type="checkbox" id="freeway">
+                    <label for="ruralhwy">Rural Hway</label>
+                    <input type="checkbox" id="ruralhwy">
+                    <label for="ruraloth">Rural Other</label>
+                    <input type="checkbox" id="ruraloth">
+                    <label for="gravel">Gravel</label>
+                    <input type="checkbox" id="gravel">
+                </fieldset>
+            </form>
+
+            <p style="font-size: 85%">Light: </p>
+            <form method="post" action="demoform.asp">
+                <fieldset data-role="controlgroup">
+                    <label for="day">Day</label>
+                    <input type="checkbox" id="day">
+                    <label for="dawn">Dawn/Dusk</label>
+                    <input type="checkbox" id="dawn">
+                    <label for="night">Night</label>
+                    <input type="checkbox" id="night">
+                </fieldset>
+            </form>
+
+        </div>
+
+        <div id="bottom" style="margin-right:auto;margin-left:auto;margin-top:15px;text-align:center">
+            <a style="width:20%;display:inline" onclick="FinishTrip()" data-rel="popup" data-position-to="window" data-transition="pop" class="ui-btn ui-icon-check ui-btn-icon-left"> Finish</a>
+        </div>
+    </div>
+    <script>
+        var statusRunning = 0;
+        var TripEdit = 0;
+        var Odo1 = 0;
+        var Odo2 = 0;
+
+        // DEMO DATA 
+        var database = firebase.database();
+        function publishData(){   
+                firebase.database().ref('NEW/').set(trips);    
+            }
+        
+        function readData(){   
+            var ref = firebase.database().ref("NEW");
+            var trip = [];    
+            ref.on("value", function(snapshot) {
+              snapshot.forEach(function(childSnapshot) {
+              console.log(childSnapshot.val());       
+              trip.push(childSnapshot.val());    
+              });  
+            });   
+            console.log(trip)
+            return trip;        
+        }
+        trips = readData();
+        setTimeout(function(){clearList(); updateList()}, 3000);
+        
+        //rego: "TPZ486", park: 0, trf_light: 0, trf_moderate: 1, trf_heavy: 1, wthr_dry: 1, wthr_wet: 1, rd_st: 0, rd_m: 1, rd_ic: 0, rd_fw: 1, rd_rh: 0, rd_o: 0, rd_g: 0, light_day: 1, light_dawn: 0, light_night: 0 }, { start: [2018, 7, 28, 19, 30, -37.70, 134.97, 42976], end: [2018, 7, 28, 20, 30, -50.2, 132.88, 43000], supervisor: "Mary Smith", rego: "MRQ972", park: 0, trf_light: 1, trf_moderate: 1, trf_heavy: 0, wthr_dry: 0, wthr_wet: 1, rd_st: 0, rd_m: 0, rd_ic: 1, rd_fw: 0, rd_rh: 1, rd_o: 1, rd_g: 0, light_day: 1, light_dawn: 0, light_night: 1 }, { start: [2018, 7, 29, 10, 15, -37.70, 134.97, 42976], end: [2018, 7, 29, 10, 45, -50.2, 132.88, 43000], supervisor: "Mary Smith", rego: "MRQ972", park: 0, trf_light: 1, trf_moderate: 1, trf_heavy: 0, wthr_dry: 0, wthr_wet: 1, rd_st: 0, rd_m: 0, rd_ic: 1, rd_fw: 0, rd_rh: 1, rd_o: 1, rd_g: 0, light_day: 1, light_dawn: 0, light_night: 0 }, { start: [2018, 7, 29, 16, 30, -37.70, 134.97, 42976], end: [2018, 7, 29, 17, 15, -50.2, 132.88, 43000], supervisor: "Mary Smith", rego: "MRQ972", park: 0, trf_light: 1, trf_moderate: 1, trf_heavy: 0, wthr_dry: 0, wthr_wet: 1, rd_st: 0, rd_m: 0, rd_ic: 1, rd_fw: 0, rd_rh: 1, rd_o: 1, rd_g: 0, light_day: 1, light_dawn: 0, light_night: 1}];
+
+        // START TRIP
+        function StartTrip() {
+            var today = new Date();
+            DD1 = today.getDate();
+            MM1 = today.getMonth();
+            YY1 = today.getFullYear();
+            M1 = today.getHours();
+            S1 = today.getMinutes();
+            LON1 = 0;
+            LAT1 = 0;
+            Odo1 = document.getElementById("odo").value;
+            Supervisor1 = document.getElementById("supervisor").value;
+            Plate1 = document.getElementById("plate").value;
+            statusRunning = 1;
+            countDownDate = new Date();
+            window.location.href = "#Running"
+            
+            
+            publishData();
+        }
+
+        function SetupDone() {
+            var n1 = document.getElementById("plateDefault").value;
+            var n2 = document.getElementById("supervisorDefault").value;
+            document.getElementById("plate").value = n1;
+            document.getElementById("supervisor").value = n2;
+            window.location.href = "#Dashboard"
+        }
+
+        function StopTrip() {
+            summaryMode = 0;
+            document.getElementById("odoStart2").value = Odo1
+            document.getElementById("odoEnd2").value = Odo1
+            document.getElementById("supervisor2").value = Supervisor1
+            document.getElementById("numberplate2").value = Plate1
+            var today = new Date();
+            DD2 = today.getDate();
+            MM2 = today.getMonth();
+            YY2 = today.getFullYear();
+            M2 = today.getHours();
+            S2 = today.getMinutes();
+            LON2 = 0;
+            LAT2 = 0;
+            WHAT2 = 0;
+            Time2 = timeDiff(M1, S1, M2, S2);
+            document.getElementById("traveltime2").value = Time2[0];
+            statusRunning = 0;
+            window.location.href = "#Summary";
+        }
+
+        function FinishTrip() {
+            exportInformation();
+            $("#Delete").remove();
+            clearList();
+            updateList();
+            publishData();
+            summaryMode = 0;
+            window.location.href = "#Dashboard";
+        }
+
+        // TRIP IN PROGRESS
+        countDownDate = new Date();
+        var x = setInterval(function() {
+            // Get todays date and time
+            var now = new Date().getTime();
+            var distance = now - countDownDate.getTime();
+            if (statusRunning == 0) {
+                distance = 0;
+            }
+            var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // Output the result in an element with id="demo"
+            document.getElementById("demo").innerHTML = hours + "h " + minutes + "m " + seconds + "s ";
+        }, 1000);
+
+        // CALCULATE TOTAL DAYTIME AND NIGHTTIME HOURS
+        function updateList() {
+            var totalTimeMin = 0;
+            var nightTimeMin = 0;
+            for (j = 0; j <= trips.length - 1; j++) {
+                
+                // CREATE RECENT TRIPS LIST
+                var btn = document.createElement("button");
+                var buttonName = "Recent" + String(j + 1);
+                var buttonFunc = "Edit(" + String(j + 1) + ")";
+                var txtName = "Text" + String(j + 1);
+
+                // CALCULATE TRIP TIME FOR BUTTONS
+                tripTime = timeDiff(trips[trips.length - j - 1].start[3], trips[trips.length - j - 1].start[4], trips[trips.length - j - 1].end[3], trips[trips.length - j - 1].end[4])
+                var buttonTitle = tripTime[0].toString() + " min on " + trips[trips.length - j - 1].start[2] + "/" + trips[trips.length - j - 1].start[1] + "/" + trips[trips.length - j - 1].start[0];
+                var t = document.createTextNode(buttonTitle);
+                btn.setAttribute('id', buttonName);
+                btn.setAttribute('onclick', buttonFunc);
+                btn.setAttribute('class', "ui-btn ui-btn-b ui-shadow ui-corner-all");
+                btn.setAttribute('data-rel', "popup");
+                btn.setAttribute("data-position-to", "window")
+                btn.appendChild(t);
+                document.getElementById("recents").appendChild(btn);
+                totalTimeMin = totalTimeMin + tripTime[0];
+                if (trips[trips.length - j - 1].light_night == 1) {
+                    nightTimeMin = nightTimeMin + tripTime[0];
+                }
+            }
+            // CALCULATE TOTAL TIMES AND UPDATE PROGRESS
+            totalTimeHr = totalTimeMin / 60;
+            nightTimeHr = nightTimeMin / 60;
+            var defaultTotal = Math.ceil(totalTimeHr);
+            var defaultNight = Math.ceil(nightTimeHr);
+            var elem = document.getElementById("dayText");
+            elem.innerHTML = defaultTotal.toString().concat(" hours completed");
+            var elem = document.getElementById("nightText");
+            elem.innerHTML = defaultNight.toString().concat(" hours completed");
+            
+            // ADJUST HOURS IF EXCEEDING 120 OR 20
+            if (defaultTotal > 120) {
+                defaultTotal = 120
+            };
+            if (defaultTotal > 20) {
+                defaultNight = 20
+            };
+            var requirementTotal = 120;
+            var requirementNight = 20;
+            var progressTotal = (defaultTotal * 100 / requirementTotal).toString();
+            var progressNight = (defaultNight * 100 / requirementNight).toString();
+            var elem = document.getElementById("dayBar");
+            elem.style.width = progressTotal.concat("%");
+            var elem = document.getElementById("nightBar");
+            elem.style.width = progressNight.concat("%");
+            listLength = trips.length;
+            console.log(listLength);
+        }
+        updateList();
+
+        function clearList() {
+            for (j = 0; j <= listLength; j++) {
+                var parent = document.getElementById("recents");
+                var childName = "#Recent" + String(j + 1)
+                $(childName).remove();
+            }
+        }
+
+        function timeDiff(H1, M1, H2, M2) {
+            var MM = M2 - M1;
+            if (M1 > M2) {
+                MM = 60 + (M2 - M1);
+                H2 = H2 - 1;
+            }
+            var HH = H2 - H1;
+            MM = MM + 60 * HH;
+
+            if (MM == 0) {
+                MM = MM + 1;
+            }
+            var Diff = [MM, HH == 0];
+            return Diff;
+        }
+
+        function exportInformation() {
+            if (summaryMode == 1) {
+                indexUpdate = currentIndex;
+            } else {
+                indexUpdate = trips.length;
+            }
+            trips[indexUpdate] = {
+                start: [YY1, MM1, DD1, M1, S1, LON1, LAT1, (document.getElementById("odoStart2").value)],
+                end: [YY2, MM2, DD2, M2, S1, LON2, LAT2, (document.getElementById("odoEnd2").value)],
+                supervisor: document.getElementById("supervisor2").value,
+                rego: document.getElementById("numberplate2").value,
+                park: (document.getElementById("park").checked) ? 1 : 0,
+                trf_light: (document.getElementById("light").checked) ? 1 : 0,
+                trf_moderate: (document.getElementById("moderate").checked) ? 1 : 0,
+                trf_heavy: (document.getElementById("heavy").checked) ? 1 : 0,
+                wthr_dry: (document.getElementById("dry").checked) ? 1 : 0,
+                wthr_wet: (document.getElementById("wet").checked) ? 1 : 0,
+                rd_st: (document.getElementById("local").checked) ? 1 : 0,
+                rd_m: (document.getElementById("main").checked) ? 1 : 0,
+                rd_ic: (document.getElementById("inner").checked) ? 1 : 0,
+                rd_fw: (document.getElementById("freeway").checked) ? 1 : 0,
+                rd_rh: (document.getElementById("ruralhwy").checked) ? 1 : 0,
+                rd_o: (document.getElementById("ruraloth").checked) ? 1 : 0,
+                rd_g: (document.getElementById("gravel").checked) ? 1 : 0,
+                light_day: (document.getElementById("day").checked) ? 1 : 0,
+                light_dawn: (document.getElementById("dawn").checked) ? 1 : 0,
+                light_night: (document.getElementById("night").checked) ? 1 : 0
+            }
+            console.log(trips);
+        }
+
+        function Edit(j) {
+            summaryMode = 1;
+            currentIndex = j;
+            k = j - 1;
+            j = k;
+            var btn = document.createElement('a');
+            var buttonName = "Delete";
+            var txtName = "Text" + String(j + 1);
+            btn.setAttribute('id', buttonName);
+            btn.setAttribute('onclick', "Delete(j)");
+            btn.setAttribute('class', "ui-btn ui-icon-delete ui-btn-icon-left");
+            btn.setAttribute('style', "width:20%; display:inline")
+            var t = document.createTextNode("Delete");
+            btn.innerHTML = 'Delete';
+            document.getElementById("bottom").appendChild(btn);
+
+            DD1 = trips[j].start[2];
+            MM1 = trips[j].start[1];
+            YY1 = trips[j].start[0];
+            M1 = trips[j].start[3];
+            S1 = trips[j].start[4];
+            DD2 = trips[j].end[2];
+            MM2 = trips[j].end[1];
+            YY2 = trips[j].end[0];
+            M2 = trips[j].end[3];
+            S2 = trips[j].end[4];
+            LON1 = trips[j].start[5];
+            LAT1 = trips[j].start[6];
+            LON2 = trips[j].end[5];
+            LAT2 = trips[j].end[6];
+            timeTakenEdit = timeDiff(M1, S2, M2, S2);
+            document.getElementById("traveltime2").value = timeTakenEdit[0]
+            document.getElementById("odoStart2").value = trips[j].start[7]
+            document.getElementById("odoEnd2").value = trips[j].end[7]
+            document.getElementById("supervisor2").value = trips[j].supervisor
+            document.getElementById("numberplate2").value = trips[j].rego
+            document.getElementById("park").checked = trips[j].park == 1
+            document.getElementById("light").checked = trips[j].trf_light == 1
+            document.getElementById("moderate").checked = trips[j].trf_moderate == 1
+            document.getElementById("heavy").checked = trips[j].trf_heavy == 1
+            document.getElementById("dry").checked = trips[j].wthr_dry == 1
+            document.getElementById("wet").checked = trips[j].wthr_wet == 1
+            document.getElementById("local").checked = trips[j].rd_st == 1
+            document.getElementById("main").checked = trips[j].rd_m == 1
+            document.getElementById("inner").checked = trips[j].rd_ic == 1
+            document.getElementById("freeway").checked = trips[j].rd_fw == 1
+            document.getElementById("ruralhwy").checked = trips[j].rd_rh == 1
+            document.getElementById("ruraloth").checked = trips[j].rd_o == 1
+            document.getElementById("gravel").checked = trips[j].rd_g == 1
+            document.getElementById("day").checked = trips[j].light_day == 1
+            document.getElementById("dawn").checked = trips[j].light_dawn == 1
+            document.getElementById("night").checked = trips[j].light_night == 1
+            window.location.href = "#Summary";
+        }
+
+        function Delete(j) {
+            trips.splice(j - 1, 1);
+            $("#Delete").remove();
+            console.log(trips);
+            clearList();
+            updateList();
+            window.location.href = "#Dashboard";
+        }
+    </script>
+</body>
+
+</html>
